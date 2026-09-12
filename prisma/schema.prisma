@@ -1,0 +1,125 @@
+// BS INTERNATIONAL ACADEMY
+// Academic Foundation Schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum SectionType {
+  NURSERY
+  PRIMARY
+  JUNIOR_SECONDARY
+  SENIOR_SECONDARY
+}
+
+model School {
+  id          String   @id @default(cuid())
+  name        String
+  code        String   @unique
+  address     String?
+  phone       String?
+  email       String?
+  website     String?
+  logoUrl     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sessions    AcademicSession[]
+  sections    Section[]
+  classes     SchoolClass[]
+  subjects    Subject[]
+}
+
+model AcademicSession {
+  id          String   @id @default(cuid())
+  name        String
+  startYear   Int
+  endYear     Int
+  isCurrent   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  terms       Term[]
+  classes     SchoolClass[]
+
+  @@unique([schoolId, name])
+  @@index([schoolId])
+}
+
+model Term {
+  id          String   @id @default(cuid())
+  name        String
+  number      Int
+  isCurrent   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sessionId   String
+  session     AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, number])
+  @@index([sessionId])
+}
+
+model Section {
+  id          String      @id @default(cuid())
+  name        String
+  type        SectionType
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  schoolId    String
+  school      School      @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  classes     SchoolClass[]
+
+  @@unique([schoolId, type])
+  @@index([schoolId])
+}
+
+model SchoolClass {
+  id          String   @id @default(cuid())
+  name        String
+  code        String
+  capacity    Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  sectionId   String
+  section     Section  @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+
+  sessionId   String
+  session     AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, code, sessionId])
+  @@index([schoolId])
+  @@index([sectionId])
+  @@index([sessionId])
+}
+
+model Subject {
+  id          String   @id @default(cuid())
+  name        String
+  code        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  schoolId    String
+  school      School   @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, code])
+  @@index([schoolId])
+}
