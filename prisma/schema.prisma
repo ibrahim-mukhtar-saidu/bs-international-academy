@@ -29,14 +29,16 @@ model School {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  sessions        AcademicSession[]
-  sections        Section[]
-  classes         SchoolClass[]
-  subjects        Subject[]
-  users           User[]
-  teacherProfiles TeacherProfile[]
-  studentProfiles StudentProfile[]
-  parentProfiles  ParentProfile[]
+  sessions         AcademicSession[]
+  sections         Section[]
+  classes          SchoolClass[]
+  subjects         Subject[]
+  users            User[]
+  teacherProfiles  TeacherProfile[]
+  studentProfiles  StudentProfile[]
+  parentProfiles   ParentProfile[]
+  timetablePeriods TimetablePeriod[]
+  examinations     Examination[]
 }
 
 model AcademicSession {
@@ -51,9 +53,13 @@ model AcademicSession {
   schoolId String
   school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
-  terms           Term[]
-  classes         SchoolClass[]
-  studentProfiles StudentProfile[]
+  terms              Term[]
+  classes            SchoolClass[]
+  studentProfiles    StudentProfile[]
+  teacherAssignments TeacherAssignment[]
+  timetableEntries   TimetableEntry[]
+  assessments        Assessment[]
+  examinations       Examination[]
 
   @@unique([schoolId, name])
   @@index([schoolId])
@@ -67,8 +73,10 @@ model Term {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  sessionId String
-  session   AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId    String
+  session      AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  assessments  Assessment[]
+  examinations Examination[]
 
   @@unique([sessionId, number])
   @@index([sessionId])
@@ -104,9 +112,13 @@ model SchoolClass {
   sectionId String
   section   Section @relation(fields: [sectionId], references: [id], onDelete: Cascade)
 
-  sessionId       String
-  session         AcademicSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  studentProfiles StudentProfile[]
+  sessionId          String
+  session            AcademicSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  studentProfiles    StudentProfile[]
+  teacherAssignments TeacherAssignment[]
+  timetableEntries   TimetableEntry[]
+  assessments        Assessment[]
+  examinations       Examination[]
 
   @@unique([schoolId, code, sessionId])
   @@index([schoolId])
@@ -125,6 +137,9 @@ model Subject {
 
   schoolId String
   school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  teacherAssignments TeacherAssignment[]
+  examinationScores  ExaminationScore[]
 
   @@unique([schoolId, code])
   @@index([schoolId])
@@ -180,8 +195,37 @@ model TeacherProfile {
   schoolId String
   school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
 
+  assignments      TeacherAssignment[]
+  timetableEntries TimetableEntry[]
+
   @@unique([schoolId, employeeNo])
   @@index([schoolId])
+}
+
+model TeacherAssignment {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  teacherId String
+  teacher   TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  classId     String
+  schoolClass SchoolClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  sessionId        String
+  session          AcademicSession  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  timetableEntries TimetableEntry[]
+  assessments      Assessment[]
+
+  @@unique([teacherId, subjectId, classId, sessionId])
+  @@index([teacherId])
+  @@index([subjectId])
+  @@index([classId])
+  @@index([sessionId])
 }
 
 model StudentProfile {
@@ -205,7 +249,9 @@ model StudentProfile {
   sessionId String?
   session   AcademicSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
 
-  parents ParentStudent[]
+  parents           ParentStudent[]
+  assessmentScores  AssessmentScore[]
+  examinationScores ExaminationScore[]
 
   @@unique([schoolId, admissionNo])
   @@index([schoolId])
@@ -243,4 +289,168 @@ model ParentStudent {
   @@unique([parentId, studentId])
   @@index([parentId])
   @@index([studentId])
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+}
+
+model TimetablePeriod {
+  id        String   @id @default(cuid())
+  name      String
+  startTime String
+  endTime   String
+  order     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  entries TimetableEntry[]
+
+  @@unique([schoolId, order])
+  @@index([schoolId])
+}
+
+model TimetableEntry {
+  id        String    @id @default(cuid())
+  day       DayOfWeek
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  sessionId String
+  session   AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  classId     String
+  schoolClass SchoolClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  periodId String
+  period   TimetablePeriod @relation(fields: [periodId], references: [id], onDelete: Cascade)
+
+  assignmentId String
+  assignment   TeacherAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  teacherId String
+  teacher   TeacherProfile @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, classId, day, periodId])
+  @@unique([sessionId, teacherId, day, periodId])
+  @@index([sessionId])
+  @@index([classId])
+  @@index([periodId])
+  @@index([assignmentId])
+  @@index([teacherId])
+}
+
+enum AssessmentType {
+  ASSIGNMENT
+  TEST
+}
+
+model Assessment {
+  id          String         @id @default(cuid())
+  title       String
+  description String?
+  type        AssessmentType
+  maxScore    Decimal        @db.Decimal(6, 2)
+  dueDate     DateTime?
+  isPublished Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  teacherAssignmentId String
+  teacherAssignment   TeacherAssignment @relation(fields: [teacherAssignmentId], references: [id], onDelete: Cascade)
+
+  sessionId String
+  session   AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  classId     String
+  schoolClass SchoolClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  termId String?
+  term   Term?   @relation(fields: [termId], references: [id], onDelete: SetNull)
+
+  scores AssessmentScore[]
+
+  @@index([teacherAssignmentId])
+  @@index([sessionId])
+  @@index([classId])
+  @@index([termId])
+  @@index([type])
+  @@index([isPublished])
+}
+
+model AssessmentScore {
+  id        String   @id @default(cuid())
+  score     Decimal  @db.Decimal(6, 2)
+  feedback  String?
+  gradedAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assessmentId String
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+
+  studentId String
+  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([assessmentId, studentId])
+  @@index([assessmentId])
+  @@index([studentId])
+}
+
+model Examination {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  maxScore    Decimal  @db.Decimal(6, 2)
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+
+  sessionId String
+  session   AcademicSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  termId String
+  term   Term   @relation(fields: [termId], references: [id], onDelete: Cascade)
+
+  classId     String
+  schoolClass SchoolClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  scores ExaminationScore[]
+
+  @@index([schoolId])
+  @@index([sessionId])
+  @@index([termId])
+  @@index([classId])
+}
+
+model ExaminationScore {
+  id        String   @id @default(cuid())
+  score     Decimal  @db.Decimal(6, 2)
+  feedback  String?
+  gradedAt  DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  examinationId String
+  examination   Examination @relation(fields: [examinationId], references: [id], onDelete: Cascade)
+
+  studentId String
+  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@unique([examinationId, studentId, subjectId])
+  @@index([examinationId])
+  @@index([studentId])
+  @@index([subjectId])
 }
