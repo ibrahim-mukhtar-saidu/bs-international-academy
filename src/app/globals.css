@@ -24,3 +24,48 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  body {
+    background: white !important;
+  }
+
+  .print-hidden {
+    display: none !important;
+  }
+
+  .report-page {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .report-card {
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  .report-card > div {
+    break-inside: avoid;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  tr {
+    break-inside: avoid;
+  }
+
+  th,
+  td {
+    border-bottom: 1px solid #d1d5db !important;
+  }
+}
