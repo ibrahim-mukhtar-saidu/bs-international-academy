@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -140,9 +141,11 @@ export default async function PaymentReceiptPage({
             <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-4">
                 {school.logoUrl ? (
-                  <img
+                  <Image
                     src={school.logoUrl}
                     alt={`${school.name} logo`}
+                    width={64}
+                    height={64}
                     className="h-16 w-16 rounded-2xl bg-white object-contain p-2"
                   />
                 ) : (

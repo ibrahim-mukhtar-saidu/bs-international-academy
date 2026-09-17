@@ -97,7 +97,7 @@ export async function createAdmission(input: CreateAdmissionInput) {
   }
 
   let sectionId = input.sectionId?.trim() || undefined;
-  let classId = input.classId?.trim() || undefined;
+  const classId = input.classId?.trim() || undefined;
 
   if (classId) {
     const schoolClass = await prisma.schoolClass.findFirst({

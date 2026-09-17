@@ -30,7 +30,7 @@ export default function EnrollForm({
     setError("");
 
     try {
-      const result = await enrollAdmission({
+      await enrollAdmission({
         applicationId,
         email,
         password,

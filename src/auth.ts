@@ -34,13 +34,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             ? credentials.password
             : "";
 
-        console.log("[AUTH DEBUG] credentials received:", {
-          email,
-          passwordProvided: Boolean(password),
-        });
-
         if (!email || !password) {
-          console.log("[AUTH DEBUG] missing email or password");
           return null;
         }
 
@@ -48,14 +42,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           where: { email },
         });
 
-        console.log("[AUTH DEBUG] user lookup:", {
-          found: Boolean(user),
-          status: user?.status ?? null,
-          role: user?.role ?? null,
-        });
-
         if (!user || user.status !== "ACTIVE") {
-          console.log("[AUTH DEBUG] user missing or inactive");
           return null;
         }
 
@@ -64,15 +51,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           user.passwordHash,
         );
 
-        console.log("[AUTH DEBUG] password verification:", {
-          passwordValid,
-        });
-
         if (!passwordValid) {
           return null;
         }
-
-        console.log("[AUTH DEBUG] authorize returning user");
 
         return {
           id: user.id,

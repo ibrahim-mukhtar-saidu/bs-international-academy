@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AttendanceSummary from "./attendance-summary";
 
 type AttendanceRecord = {
@@ -47,7 +47,7 @@ export default function AttendanceHistory({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function loadHistory() {
+  const loadHistory = useCallback(async () => {
     setLoading(true);
     setError("");
 
@@ -85,11 +85,15 @@ export default function AttendanceHistory({
     } finally {
       setLoading(false);
     }
-  }
+  }, [classId, date]);
 
   useEffect(() => {
-    loadHistory();
-  }, []);
+    const timer = window.setTimeout(() => {
+      void loadHistory();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [loadHistory]);
 
   return (
     <section className="mt-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
